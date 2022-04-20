@@ -1,0 +1,35 @@
+import pandas as pd
+import os
+import matplotlib.pyplot as plt
+import matplotlib.mlab as mlab
+
+
+df1 = pd.read_csv('users.csv')
+df2 = pd.read_csv('course_grades.csv')
+df3 = pd.read_csv('course_memberships.csv')
+
+
+df3['course_membership_ts'] = pd.to_datetime(df3['course_membership_ts'])
+df3 = df3[(df3['course_membership_ts'] >=pd.to_datetime('20180701')) & (df3['course_membership_ts'] <= pd.to_datetime('20190630'))]
+df3['YearMonth']  = df3['course_membership_ts'].astype(str).str[0:7]
+df3 = df3[['YearMonth','user_id']].rename(columns = {'user_id' : 'num_leaners'}).groupby('YearMonth').count()
+
+
+df2 = df2.loc[(df2['course_passing_state_id'] == 1) | (df2['course_passing_state_id'] == 2)]
+df2['course_grade_ts'] = pd.to_datetime(df2['course_grade_ts'])
+df2 = df2[(df2['course_grade_ts'] >=pd.to_datetime('20180701')) & (df2['course_grade_ts'] <= pd.to_datetime('20190630'))]
+df2['YearMonth']  = df2['course_grade_ts'].astype(str).str[0:7]
+df4 = df2[['YearMonth','user_id']].rename(columns={'user_id': 'num_complete'}).groupby('YearMonth').count()
+
+
+
+df = pd.concat([df4,df3],axis = 1)
+df.plot.bar()
+plt.ylabel('Number')
+
+
+
+result=pd.merge(df1,df2,how='right',on='user_id')
+result.loc[:,['employment_status','user_id']].head()
+result = result[['employment_status','user_id']].groupby('employment_status').count()
+result.plot.pie(subplots=True,figsize=(8,8),autopct='%.2f')
